@@ -10,7 +10,9 @@ VoxOneAudioProcessorEditor::VoxOneAudioProcessorEditor (VoxOneAudioProcessor& p)
     setupRotarySlider (compSlider, compLabel, "COMP", " %");
     setupRotarySlider (deEssSlider, deEssLabel, "DE-ESS", " %");
     setupRotarySlider (airSlider, airLabel, "AIR", " %");
+    setupRotarySlider (clipSlider, clipLabel, "SOFT CLIP", " %");
     setupRotarySlider (outputGainSlider, outputGainLabel, "OUTPUT", " dB");
+    setupRotarySlider (ceilingSlider, ceilingLabel, "CEILING", " dB");
 
     inputGainAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment> (
         audioProcessor.apvts, "inputGain", inputGainSlider);
@@ -30,10 +32,16 @@ VoxOneAudioProcessorEditor::VoxOneAudioProcessorEditor (VoxOneAudioProcessor& p)
     airAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment> (
         audioProcessor.apvts, "airAmount", airSlider);
 
+    clipAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment> (
+        audioProcessor.apvts, "clipAmount", clipSlider);
+
     outputGainAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment> (
         audioProcessor.apvts, "outputGain", outputGainSlider);
 
-    setSize (960, 360);
+    ceilingAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment> (
+        audioProcessor.apvts, "limiterCeiling", ceilingSlider);
+
+    setSize (860, 480);
 }
 
 VoxOneAudioProcessorEditor::~VoxOneAudioProcessorEditor()
@@ -71,37 +79,51 @@ void VoxOneAudioProcessorEditor::paint (juce::Graphics& g)
 void VoxOneAudioProcessorEditor::resized()
 {
     auto area = getLocalBounds();
-    area.removeFromTop (70);
-    area.reduce (20, 30);
+    area.removeFromTop (64);
+    area.reduce (24, 16);
 
-    int columnWidth = area.getWidth() / 7;
+    auto topRow = area.removeFromTop (area.getHeight() / 2);
+    topRow.removeFromBottom (10);
+    auto bottomRow = area;
+    bottomRow.removeFromTop (10);
 
-    auto inputArea  = area.removeFromLeft (columnWidth);
-    auto hpfArea    = area.removeFromLeft (columnWidth);
-    auto cleanArea  = area.removeFromLeft (columnWidth);
-    auto compArea   = area.removeFromLeft (columnWidth);
-    auto deEssArea  = area.removeFromLeft (columnWidth);
-    auto airArea    = area.removeFromLeft (columnWidth);
-    auto outputArea = area;
+    int topColWidth = topRow.getWidth() / 5;
+    auto hpfArea   = topRow.removeFromLeft (topColWidth);
+    auto cleanArea = topRow.removeFromLeft (topColWidth);
+    auto compArea  = topRow.removeFromLeft (topColWidth);
+    auto deEssArea = topRow.removeFromLeft (topColWidth);
+    auto airArea   = topRow;
 
-    inputGainLabel.setBounds (inputArea.removeFromTop (24));
-    inputGainSlider.setBounds (inputArea.reduced (6));
-
-    hpfLabel.setBounds (hpfArea.removeFromTop (24));
+    hpfLabel.setBounds (hpfArea.removeFromTop (22));
     hpfSlider.setBounds (hpfArea.reduced (6));
 
-    cleanLabel.setBounds (cleanArea.removeFromTop (24));
+    cleanLabel.setBounds (cleanArea.removeFromTop (22));
     cleanSlider.setBounds (cleanArea.reduced (6));
 
-    compLabel.setBounds (compArea.removeFromTop (24));
+    compLabel.setBounds (compArea.removeFromTop (22));
     compSlider.setBounds (compArea.reduced (6));
 
-    deEssLabel.setBounds (deEssArea.removeFromTop (24));
+    deEssLabel.setBounds (deEssArea.removeFromTop (22));
     deEssSlider.setBounds (deEssArea.reduced (6));
 
-    airLabel.setBounds (airArea.removeFromTop (24));
+    airLabel.setBounds (airArea.removeFromTop (22));
     airSlider.setBounds (airArea.reduced (6));
 
-    outputGainLabel.setBounds (outputArea.removeFromTop (24));
+    int bottomColWidth = bottomRow.getWidth() / 4;
+    auto inputArea   = bottomRow.removeFromLeft (bottomColWidth);
+    auto clipArea    = bottomRow.removeFromLeft (bottomColWidth);
+    auto outputArea  = bottomRow.removeFromLeft (bottomColWidth);
+    auto ceilingArea = bottomRow;
+
+    inputGainLabel.setBounds (inputArea.removeFromTop (22));
+    inputGainSlider.setBounds (inputArea.reduced (6));
+
+    clipLabel.setBounds (clipArea.removeFromTop (22));
+    clipSlider.setBounds (clipArea.reduced (6));
+
+    outputGainLabel.setBounds (outputArea.removeFromTop (22));
     outputGainSlider.setBounds (outputArea.reduced (6));
+
+    ceilingLabel.setBounds (ceilingArea.removeFromTop (22));
+    ceilingSlider.setBounds (ceilingArea.reduced (6));
 }

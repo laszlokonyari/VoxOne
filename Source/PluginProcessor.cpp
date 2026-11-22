@@ -60,10 +60,24 @@ juce::AudioProcessorValueTreeState::ParameterLayout VoxOneAudioProcessor::create
         "%"));
 
     params.push_back (std::make_unique<juce::AudioParameterFloat> (
+        juce::ParameterID { "clipAmount", 1 },
+        "Soft Clip",
+        juce::NormalisableRange<float> (0.0f, 100.0f, 1.0f),
+        20.0f,
+        "%"));
+
+    params.push_back (std::make_unique<juce::AudioParameterFloat> (
         juce::ParameterID { "outputGain", 1 },
         "Output Gain",
         juce::NormalisableRange<float> (-24.0f, 24.0f, 0.1f),
         0.0f,
+        "dB"));
+
+    params.push_back (std::make_unique<juce::AudioParameterFloat> (
+        juce::ParameterID { "limiterCeiling", 1 },
+        "Ceiling",
+        juce::NormalisableRange<float> (-6.0f, -0.1f, 0.1f),
+        -0.3f,
         "dB"));
 
     return { params.begin(), params.end() };
@@ -210,6 +224,26 @@ void VoxOneAudioProcessor::processAirExciter (juce::AudioBuffer<float>& buffer, 
     airShelfFilter.process (mainContext);
 }
 
+void VoxOneAudioProcessor::processSoftClipper (juce::AudioBuffer<float>& buffer, float clipAmount)
+{
+    if (clipAmount <= 0.01f)
+        return;
+
+    int numChannels = buffer.getNumChannels();
+    int numSamples = buffer.getNumSamples();
+    float norm = clipAmount * 0.01f;
+    float drive = 1.0f + 3.0f * norm;
+    float invTanhDrive = 1.0f / std::tanh (drive);
+
+    for (int ch = 0; ch < numChannels; ++ch)
+    {
+        auto* data = buffer.getWritePointer (ch);
+
+        for (int i = 0; i < numSamples; ++i)
+            data[i] = std::tanh (data[i] * drive) * invTanhDrive;
+    }
+}
+
 const juce::String VoxOneAudioProcessor::getName() const
 {
     return JucePlugin_Name;
@@ -315,6 +349,10 @@ void VoxOneAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock
     outputGainProcessor.prepare (spec);
     outputGainProcessor.setRampDurationSeconds (0.02);
 
+    outputLimiter.prepare (spec);
+    outputLimiter.reset();
+    outputLimiter.setRelease (50.0f);
+
     updateFilters (
         apvts.getRawParameterValue ("hpfFreq")->load(),
         apvts.getRawParameterValue ("cleanAmount")->load(),
@@ -322,6 +360,7 @@ void VoxOneAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock
 
     updateCompressor (apvts.getRawParameterValue ("compAmount")->load());
     updateDeEsser (apvts.getRawParameterValue ("deEssAmount")->load());
+    outputLimiter.setThreshold (apvts.getRawParameterValue ("limiterCeiling")->load());
 }
 
 void VoxOneAudioProcessor::releaseResources()
@@ -351,16 +390,19 @@ void VoxOneAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce:
     for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
         buffer.clear (i, 0, buffer.getNumSamples());
 
-    auto inputGainDb  = apvts.getRawParameterValue ("inputGain")->load();
-    auto hpfFreq      = apvts.getRawParameterValue ("hpfFreq")->load();
-    auto cleanAmount  = apvts.getRawParameterValue ("cleanAmount")->load();
-    auto compAmount   = apvts.getRawParameterValue ("compAmount")->load();
-    auto deEssAmount  = apvts.getRawParameterValue ("deEssAmount")->load();
-    auto airAmount    = apvts.getRawParameterValue ("airAmount")->load();
-    auto outputGainDb = apvts.getRawParameterValue ("outputGain")->load();
+    auto inputGainDb     = apvts.getRawParameterValue ("inputGain")->load();
+    auto hpfFreq         = apvts.getRawParameterValue ("hpfFreq")->load();
+    auto cleanAmount     = apvts.getRawParameterValue ("cleanAmount")->load();
+    auto compAmount      = apvts.getRawParameterValue ("compAmount")->load();
+    auto deEssAmount     = apvts.getRawParameterValue ("deEssAmount")->load();
+    auto airAmount       = apvts.getRawParameterValue ("airAmount")->load();
+    auto clipAmount      = apvts.getRawParameterValue ("clipAmount")->load();
+    auto outputGainDb    = apvts.getRawParameterValue ("outputGain")->load();
+    auto limiterCeiling  = apvts.getRawParameterValue ("limiterCeiling")->load();
 
     inputGainProcessor.setGainDecibels (inputGainDb);
     outputGainProcessor.setGainDecibels (outputGainDb);
+    outputLimiter.setThreshold (limiterCeiling);
     updateFilters (hpfFreq, cleanAmount, airAmount);
     updateCompressor (compAmount);
     updateDeEsser (deEssAmount);
@@ -377,8 +419,10 @@ void VoxOneAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce:
 
     processDeEsser (buffer, deEssAmount);
     processAirExciter (buffer, airAmount);
+    processSoftClipper (buffer, clipAmount);
 
     outputGainProcessor.process (context);
+    outputLimiter.process (context);
 }
 
 bool VoxOneAudioProcessor::hasEditor() const

@@ -44,6 +44,7 @@ private:
     void updateDeEsser (float deEssAmount);
     void processDeEsser (juce::AudioBuffer<float>& buffer, float deEssAmount);
     void processAirExciter (juce::AudioBuffer<float>& buffer, float airAmount);
+    void processSoftClipper (juce::AudioBuffer<float>& buffer, float clipAmount);
 
     using StereoFilter = juce::dsp::ProcessorDuplicator<
         juce::dsp::IIR::Filter<float>,
@@ -66,6 +67,7 @@ private:
     juce::AudioBuffer<float> airBuffer;
 
     juce::dsp::Gain<float> outputGainProcessor;
+    juce::dsp::Limiter<float> outputLimiter;
 
     double currentSampleRate { 44100.0 };
     float lastHpfFreq { -1.0f };
