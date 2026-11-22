@@ -17,12 +17,13 @@ public:
 
 private:
     void timerCallback() override;
-    void setupRotarySlider (juce::Slider& slider, juce::Label& label,
+    void setupRotarySlider (AnimatedVoxKnob& slider, juce::Label& label,
                             const juce::String& text, const juce::String& suffix,
-                            juce::Colour accentColour);
+                            juce::Colour accentColour, double defaultVal, bool bipolar = false);
     void setupHeaderControls();
     void drawModuleCard (juce::Graphics& g, juce::Rectangle<int> bounds,
-                         const juce::String& title, juce::Colour accent);
+                         const juce::String& title, juce::Colour accent, float activityGlow);
+    void drawSignalChain (juce::Graphics& g, juce::Rectangle<int> area);
 
     VoxOneAudioProcessor& audioProcessor;
     VoxOneLookAndFeel customLookAndFeel;
@@ -33,15 +34,15 @@ private:
     juce::TextButton nextPresetButton { ">" };
     juce::TextButton bypassButton { "ACTIVE" };
 
-    juce::Slider inputGainSlider;
-    juce::Slider hpfSlider;
-    juce::Slider cleanSlider;
-    juce::Slider compSlider;
-    juce::Slider deEssSlider;
-    juce::Slider airSlider;
-    juce::Slider clipSlider;
-    juce::Slider outputGainSlider;
-    juce::Slider ceilingSlider;
+    AnimatedVoxKnob inputGainSlider;
+    AnimatedVoxKnob hpfSlider;
+    AnimatedVoxKnob cleanSlider;
+    AnimatedVoxKnob compSlider;
+    AnimatedVoxKnob deEssSlider;
+    AnimatedVoxKnob airSlider;
+    AnimatedVoxKnob clipSlider;
+    AnimatedVoxKnob outputGainSlider;
+    AnimatedVoxKnob ceilingSlider;
 
     juce::Label inputGainLabel;
     juce::Label hpfLabel;
@@ -71,6 +72,11 @@ private:
 
     std::array<float, VoxOneAudioProcessor::waveformSize> inWaveCache {};
     std::array<float, VoxOneAudioProcessor::waveformSize> outWaveCache {};
+
+    float toneCardGlow { 0.0f };
+    float dynamicsCardGlow { 0.0f };
+    float characterCardGlow { 0.0f };
+    float masterCardGlow { 0.0f };
     int lastDisplayedPreset { -1 };
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (VoxOneAudioProcessorEditor)
