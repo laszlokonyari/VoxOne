@@ -4,27 +4,35 @@
 VoxOneAudioProcessorEditor::VoxOneAudioProcessorEditor (VoxOneAudioProcessor& p)
     : AudioProcessorEditor (&p), audioProcessor (p)
 {
-    setupRotarySlider (inputGainSlider, inputGainLabel, "INPUT GAIN");
-    setupRotarySlider (outputGainSlider, outputGainLabel, "OUTPUT GAIN");
+    setupRotarySlider (inputGainSlider, inputGainLabel, "INPUT", " dB");
+    setupRotarySlider (hpfSlider, hpfLabel, "HPF", " Hz");
+    setupRotarySlider (cleanSlider, cleanLabel, "CLEAN", " %");
+    setupRotarySlider (outputGainSlider, outputGainLabel, "OUTPUT", " dB");
 
     inputGainAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment> (
         audioProcessor.apvts, "inputGain", inputGainSlider);
 
+    hpfAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment> (
+        audioProcessor.apvts, "hpfFreq", hpfSlider);
+
+    cleanAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment> (
+        audioProcessor.apvts, "cleanAmount", cleanSlider);
+
     outputGainAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment> (
         audioProcessor.apvts, "outputGain", outputGainSlider);
 
-    setSize (600, 400);
+    setSize (720, 360);
 }
 
 VoxOneAudioProcessorEditor::~VoxOneAudioProcessorEditor()
 {
 }
 
-void VoxOneAudioProcessorEditor::setupRotarySlider (juce::Slider& slider, juce::Label& label, const juce::String& text)
+void VoxOneAudioProcessorEditor::setupRotarySlider (juce::Slider& slider, juce::Label& label, const juce::String& text, const juce::String& suffix)
 {
     slider.setSliderStyle (juce::Slider::RotaryHorizontalVerticalDrag);
-    slider.setTextBoxStyle (juce::Slider::TextBoxBelow, false, 70, 22);
-    slider.setTextValueSuffix (" dB");
+    slider.setTextBoxStyle (juce::Slider::TextBoxBelow, false, 76, 22);
+    slider.setTextValueSuffix (suffix);
     slider.setColour (juce::Slider::rotarySliderFillColourId, juce::Colour (0xff00e5ff));
     slider.setColour (juce::Slider::rotarySliderOutlineColourId, juce::Colour (0xff262936));
     slider.setColour (juce::Slider::thumbColourId, juce::Colour (0xffffffff));
@@ -51,15 +59,25 @@ void VoxOneAudioProcessorEditor::paint (juce::Graphics& g)
 void VoxOneAudioProcessorEditor::resized()
 {
     auto area = getLocalBounds();
-    area.removeFromTop (80);
-    area.reduce (60, 40);
+    area.removeFromTop (70);
+    area.reduce (30, 30);
 
-    auto leftArea = area.removeFromLeft (area.getWidth() / 2);
-    auto rightArea = area;
+    int columnWidth = area.getWidth() / 4;
 
-    inputGainLabel.setBounds (leftArea.removeFromTop (24));
-    inputGainSlider.setBounds (leftArea.reduced (10));
+    auto inputArea  = area.removeFromLeft (columnWidth);
+    auto hpfArea    = area.removeFromLeft (columnWidth);
+    auto cleanArea  = area.removeFromLeft (columnWidth);
+    auto outputArea = area;
 
-    outputGainLabel.setBounds (rightArea.removeFromTop (24));
-    outputGainSlider.setBounds (rightArea.reduced (10));
+    inputGainLabel.setBounds (inputArea.removeFromTop (24));
+    inputGainSlider.setBounds (inputArea.reduced (8));
+
+    hpfLabel.setBounds (hpfArea.removeFromTop (24));
+    hpfSlider.setBounds (hpfArea.reduced (8));
+
+    cleanLabel.setBounds (cleanArea.removeFromTop (24));
+    cleanSlider.setBounds (cleanArea.reduced (8));
+
+    outputGainLabel.setBounds (outputArea.removeFromTop (24));
+    outputGainSlider.setBounds (outputArea.reduced (8));
 }
