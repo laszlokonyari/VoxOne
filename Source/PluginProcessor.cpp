@@ -1,18 +1,37 @@
-//
-// Created by lacikapeek on 2026. 11. 22..
-//
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
 
 VoxOneAudioProcessor::VoxOneAudioProcessor()
     : AudioProcessor (BusesProperties()
                           .withInput ("Input", juce::AudioChannelSet::stereo(), true)
-                          .withOutput ("Output", juce::AudioChannelSet::stereo(), true))
+                          .withOutput ("Output", juce::AudioChannelSet::stereo(), true)),
+      apvts (*this, nullptr, "Parameters", createParameterLayout())
 {
 }
 
 VoxOneAudioProcessor::~VoxOneAudioProcessor()
 {
+}
+
+juce::AudioProcessorValueTreeState::ParameterLayout VoxOneAudioProcessor::createParameterLayout()
+{
+    std::vector<std::unique_ptr<juce::RangedAudioParameter>> params;
+
+    params.push_back (std::make_unique<juce::AudioParameterFloat> (
+        juce::ParameterID { "inputGain", 1 },
+        "Input Gain",
+        juce::NormalisableRange<float> (-24.0f, 24.0f, 0.1f),
+        0.0f,
+        "dB"));
+
+    params.push_back (std::make_unique<juce::AudioParameterFloat> (
+        juce::ParameterID { "outputGain", 1 },
+        "Output Gain",
+        juce::NormalisableRange<float> (-24.0f, 24.0f, 0.1f),
+        0.0f,
+        "dB"));
+
+    return { params.begin(), params.end() };
 }
 
 const juce::String VoxOneAudioProcessor::getName() const
@@ -68,7 +87,16 @@ void VoxOneAudioProcessor::changeProgramName (int index, const juce::String& new
 
 void VoxOneAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
 {
-    juce::ignoreUnused (sampleRate, samplesPerBlock);
+    juce::dsp::ProcessSpec spec;
+    spec.sampleRate = sampleRate;
+    spec.maximumBlockSize = static_cast<juce::uint32> (samplesPerBlock);
+    spec.numChannels = static_cast<juce::uint32> (getTotalNumOutputChannels());
+
+    inputGainProcessor.prepare (spec);
+    inputGainProcessor.setRampDurationSeconds (0.02);
+
+    outputGainProcessor.prepare (spec);
+    outputGainProcessor.setRampDurationSeconds (0.02);
 }
 
 void VoxOneAudioProcessor::releaseResources()
@@ -97,6 +125,18 @@ void VoxOneAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce:
 
     for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
         buffer.clear (i, 0, buffer.getNumSamples());
+
+    auto inputGainDb  = apvts.getRawParameterValue ("inputGain")->load();
+    auto outputGainDb = apvts.getRawParameterValue ("outputGain")->load();
+
+    inputGainProcessor.setGainDecibels (inputGainDb);
+    outputGainProcessor.setGainDecibels (outputGainDb);
+
+    juce::dsp::AudioBlock<float> block (buffer);
+    juce::dsp::ProcessContextReplacing<float> context (block);
+
+    inputGainProcessor.process (context);
+    outputGainProcessor.process (context);
 }
 
 bool VoxOneAudioProcessor::hasEditor() const
@@ -111,12 +151,17 @@ juce::AudioProcessorEditor* VoxOneAudioProcessor::createEditor()
 
 void VoxOneAudioProcessor::getStateInformation (juce::MemoryBlock& destData)
 {
-    juce::ignoreUnused (destData);
+    auto state = apvts.copyState();
+    std::unique_ptr<juce::XmlElement> xml (state.createXml());
+    copyXmlToBinary (*xml, destData);
 }
 
 void VoxOneAudioProcessor::setStateInformation (const void* data, int sizeInBytes)
 {
-    juce::ignoreUnused (data, sizeInBytes);
+    std::unique_ptr<juce::XmlElement> xmlState (getXmlFromBinary (data, sizeInBytes));
+
+    if (xmlState != nullptr && xmlState->hasTagName (apvts.state.getType()))
+        apvts.replaceState (juce::ValueTree::fromXml (*xmlState));
 }
 
 juce::AudioProcessor* JUCE_CALLTYPE createPluginFilter()
