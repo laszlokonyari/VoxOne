@@ -39,6 +39,13 @@ juce::AudioProcessorValueTreeState::ParameterLayout VoxOneAudioProcessor::create
         "%"));
 
     params.push_back (std::make_unique<juce::AudioParameterFloat> (
+        juce::ParameterID { "compAmount", 1 },
+        "Compressor",
+        juce::NormalisableRange<float> (0.0f, 100.0f, 1.0f),
+        40.0f,
+        "%"));
+
+    params.push_back (std::make_unique<juce::AudioParameterFloat> (
         juce::ParameterID { "outputGain", 1 },
         "Output Gain",
         juce::NormalisableRange<float> (-24.0f, 24.0f, 0.1f),
@@ -74,6 +81,20 @@ void VoxOneAudioProcessor::updateFilters (float hpfFreq, float cleanAmount)
 
         lastCleanAmount = cleanAmount;
     }
+}
+
+void VoxOneAudioProcessor::updateCompressor (float compAmount)
+{
+    float norm = compAmount * 0.01f;
+    float thresholdDb = -28.0f * norm;
+    float ratio = 1.0f + 4.0f * norm;
+    float makeupDb = 9.0f * norm;
+
+    compressor.setThreshold (thresholdDb);
+    compressor.setRatio (ratio);
+    compressor.setAttack (10.0f);
+    compressor.setRelease (80.0f);
+    compMakeupProcessor.setGainDecibels (makeupDb);
 }
 
 const juce::String VoxOneAudioProcessor::getName() const
@@ -150,12 +171,20 @@ void VoxOneAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock
     presenceFilter.prepare (spec);
     presenceFilter.reset();
 
+    compressor.prepare (spec);
+    compressor.reset();
+
+    compMakeupProcessor.prepare (spec);
+    compMakeupProcessor.setRampDurationSeconds (0.02);
+
     outputGainProcessor.prepare (spec);
     outputGainProcessor.setRampDurationSeconds (0.02);
 
     updateFilters (
         apvts.getRawParameterValue ("hpfFreq")->load(),
         apvts.getRawParameterValue ("cleanAmount")->load());
+
+    updateCompressor (apvts.getRawParameterValue ("compAmount")->load());
 }
 
 void VoxOneAudioProcessor::releaseResources()
@@ -188,11 +217,13 @@ void VoxOneAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce:
     auto inputGainDb  = apvts.getRawParameterValue ("inputGain")->load();
     auto hpfFreq      = apvts.getRawParameterValue ("hpfFreq")->load();
     auto cleanAmount  = apvts.getRawParameterValue ("cleanAmount")->load();
+    auto compAmount   = apvts.getRawParameterValue ("compAmount")->load();
     auto outputGainDb = apvts.getRawParameterValue ("outputGain")->load();
 
     inputGainProcessor.setGainDecibels (inputGainDb);
     outputGainProcessor.setGainDecibels (outputGainDb);
     updateFilters (hpfFreq, cleanAmount);
+    updateCompressor (compAmount);
 
     juce::dsp::AudioBlock<float> block (buffer);
     juce::dsp::ProcessContextReplacing<float> context (block);
@@ -201,6 +232,8 @@ void VoxOneAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce:
     hpfFilter.process (context);
     mudCutFilter.process (context);
     presenceFilter.process (context);
+    compressor.process (context);
+    compMakeupProcessor.process (context);
     outputGainProcessor.process (context);
 }
 

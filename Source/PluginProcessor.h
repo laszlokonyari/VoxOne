@@ -40,6 +40,7 @@ public:
 private:
     static juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout();
     void updateFilters (float hpfFreq, float cleanAmount);
+    void updateCompressor (float compAmount);
 
     using StereoFilter = juce::dsp::ProcessorDuplicator<
         juce::dsp::IIR::Filter<float>,
@@ -49,6 +50,8 @@ private:
     StereoFilter hpfFilter;
     StereoFilter mudCutFilter;
     StereoFilter presenceFilter;
+    juce::dsp::Compressor<float> compressor;
+    juce::dsp::Gain<float> compMakeupProcessor;
     juce::dsp::Gain<float> outputGainProcessor;
 
     double currentSampleRate { 44100.0 };
