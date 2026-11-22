@@ -8,6 +8,8 @@ VoxOneAudioProcessorEditor::VoxOneAudioProcessorEditor (VoxOneAudioProcessor& p)
     setupRotarySlider (hpfSlider, hpfLabel, "HPF", " Hz");
     setupRotarySlider (cleanSlider, cleanLabel, "CLEAN", " %");
     setupRotarySlider (compSlider, compLabel, "COMP", " %");
+    setupRotarySlider (deEssSlider, deEssLabel, "DE-ESS", " %");
+    setupRotarySlider (airSlider, airLabel, "AIR", " %");
     setupRotarySlider (outputGainSlider, outputGainLabel, "OUTPUT", " dB");
 
     inputGainAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment> (
@@ -22,10 +24,16 @@ VoxOneAudioProcessorEditor::VoxOneAudioProcessorEditor (VoxOneAudioProcessor& p)
     compAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment> (
         audioProcessor.apvts, "compAmount", compSlider);
 
+    deEssAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment> (
+        audioProcessor.apvts, "deEssAmount", deEssSlider);
+
+    airAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment> (
+        audioProcessor.apvts, "airAmount", airSlider);
+
     outputGainAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment> (
         audioProcessor.apvts, "outputGain", outputGainSlider);
 
-    setSize (840, 360);
+    setSize (960, 360);
 }
 
 VoxOneAudioProcessorEditor::~VoxOneAudioProcessorEditor()
@@ -35,7 +43,7 @@ VoxOneAudioProcessorEditor::~VoxOneAudioProcessorEditor()
 void VoxOneAudioProcessorEditor::setupRotarySlider (juce::Slider& slider, juce::Label& label, const juce::String& text, const juce::String& suffix)
 {
     slider.setSliderStyle (juce::Slider::RotaryHorizontalVerticalDrag);
-    slider.setTextBoxStyle (juce::Slider::TextBoxBelow, false, 76, 22);
+    slider.setTextBoxStyle (juce::Slider::TextBoxBelow, false, 72, 22);
     slider.setTextValueSuffix (suffix);
     slider.setColour (juce::Slider::rotarySliderFillColourId, juce::Colour (0xff00e5ff));
     slider.setColour (juce::Slider::rotarySliderOutlineColourId, juce::Colour (0xff262936));
@@ -46,7 +54,7 @@ void VoxOneAudioProcessorEditor::setupRotarySlider (juce::Slider& slider, juce::
 
     label.setText (text, juce::dontSendNotification);
     label.setJustificationType (juce::Justification::centred);
-    label.setFont (juce::FontOptions (14.0f, juce::Font::bold));
+    label.setFont (juce::FontOptions (13.0f, juce::Font::bold));
     label.setColour (juce::Label::textColourId, juce::Colour (0xff9aa0b4));
     addAndMakeVisible (label);
 }
@@ -64,28 +72,36 @@ void VoxOneAudioProcessorEditor::resized()
 {
     auto area = getLocalBounds();
     area.removeFromTop (70);
-    area.reduce (24, 30);
+    area.reduce (20, 30);
 
-    int columnWidth = area.getWidth() / 5;
+    int columnWidth = area.getWidth() / 7;
 
     auto inputArea  = area.removeFromLeft (columnWidth);
     auto hpfArea    = area.removeFromLeft (columnWidth);
     auto cleanArea  = area.removeFromLeft (columnWidth);
     auto compArea   = area.removeFromLeft (columnWidth);
+    auto deEssArea  = area.removeFromLeft (columnWidth);
+    auto airArea    = area.removeFromLeft (columnWidth);
     auto outputArea = area;
 
     inputGainLabel.setBounds (inputArea.removeFromTop (24));
-    inputGainSlider.setBounds (inputArea.reduced (8));
+    inputGainSlider.setBounds (inputArea.reduced (6));
 
     hpfLabel.setBounds (hpfArea.removeFromTop (24));
-    hpfSlider.setBounds (hpfArea.reduced (8));
+    hpfSlider.setBounds (hpfArea.reduced (6));
 
     cleanLabel.setBounds (cleanArea.removeFromTop (24));
-    cleanSlider.setBounds (cleanArea.reduced (8));
+    cleanSlider.setBounds (cleanArea.reduced (6));
 
     compLabel.setBounds (compArea.removeFromTop (24));
-    compSlider.setBounds (compArea.reduced (8));
+    compSlider.setBounds (compArea.reduced (6));
+
+    deEssLabel.setBounds (deEssArea.removeFromTop (24));
+    deEssSlider.setBounds (deEssArea.reduced (6));
+
+    airLabel.setBounds (airArea.removeFromTop (24));
+    airSlider.setBounds (airArea.reduced (6));
 
     outputGainLabel.setBounds (outputArea.removeFromTop (24));
-    outputGainSlider.setBounds (outputArea.reduced (8));
+    outputGainSlider.setBounds (outputArea.reduced (6));
 }

@@ -39,8 +39,11 @@ public:
 
 private:
     static juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout();
-    void updateFilters (float hpfFreq, float cleanAmount);
+    void updateFilters (float hpfFreq, float cleanAmount, float airAmount);
     void updateCompressor (float compAmount);
+    void updateDeEsser (float deEssAmount);
+    void processDeEsser (juce::AudioBuffer<float>& buffer, float deEssAmount);
+    void processAirExciter (juce::AudioBuffer<float>& buffer, float airAmount);
 
     using StereoFilter = juce::dsp::ProcessorDuplicator<
         juce::dsp::IIR::Filter<float>,
@@ -52,11 +55,22 @@ private:
     StereoFilter presenceFilter;
     juce::dsp::Compressor<float> compressor;
     juce::dsp::Gain<float> compMakeupProcessor;
+
+    StereoFilter deEssBandPass;
+    juce::dsp::Compressor<float> deEssCompressor;
+    juce::AudioBuffer<float> sibilanceBuffer;
+    juce::AudioBuffer<float> sibilanceCompressedBuffer;
+
+    StereoFilter airHighPass;
+    StereoFilter airShelfFilter;
+    juce::AudioBuffer<float> airBuffer;
+
     juce::dsp::Gain<float> outputGainProcessor;
 
     double currentSampleRate { 44100.0 };
     float lastHpfFreq { -1.0f };
     float lastCleanAmount { -1.0f };
+    float lastAirAmount { -1.0f };
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (VoxOneAudioProcessor)
 };

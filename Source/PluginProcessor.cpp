@@ -46,6 +46,20 @@ juce::AudioProcessorValueTreeState::ParameterLayout VoxOneAudioProcessor::create
         "%"));
 
     params.push_back (std::make_unique<juce::AudioParameterFloat> (
+        juce::ParameterID { "deEssAmount", 1 },
+        "De-Esser",
+        juce::NormalisableRange<float> (0.0f, 100.0f, 1.0f),
+        35.0f,
+        "%"));
+
+    params.push_back (std::make_unique<juce::AudioParameterFloat> (
+        juce::ParameterID { "airAmount", 1 },
+        "Fresh Air",
+        juce::NormalisableRange<float> (0.0f, 100.0f, 1.0f),
+        30.0f,
+        "%"));
+
+    params.push_back (std::make_unique<juce::AudioParameterFloat> (
         juce::ParameterID { "outputGain", 1 },
         "Output Gain",
         juce::NormalisableRange<float> (-24.0f, 24.0f, 0.1f),
@@ -55,7 +69,7 @@ juce::AudioProcessorValueTreeState::ParameterLayout VoxOneAudioProcessor::create
     return { params.begin(), params.end() };
 }
 
-void VoxOneAudioProcessor::updateFilters (float hpfFreq, float cleanAmount)
+void VoxOneAudioProcessor::updateFilters (float hpfFreq, float cleanAmount, float airAmount)
 {
     if (currentSampleRate <= 0.0)
         return;
@@ -81,6 +95,17 @@ void VoxOneAudioProcessor::updateFilters (float hpfFreq, float cleanAmount)
 
         lastCleanAmount = cleanAmount;
     }
+
+    if (std::abs (airAmount - lastAirAmount) > 0.01f)
+    {
+        float norm = airAmount * 0.01f;
+        float shelfBoostDb = 4.5f * norm;
+
+        *airShelfFilter.state = *juce::dsp::IIR::Coefficients<float>::makeHighShelf (
+            currentSampleRate, 10000.0f, 0.7071f, juce::Decibels::decibelsToGain (shelfBoostDb));
+
+        lastAirAmount = airAmount;
+    }
 }
 
 void VoxOneAudioProcessor::updateCompressor (float compAmount)
@@ -95,6 +120,94 @@ void VoxOneAudioProcessor::updateCompressor (float compAmount)
     compressor.setAttack (10.0f);
     compressor.setRelease (80.0f);
     compMakeupProcessor.setGainDecibels (makeupDb);
+}
+
+void VoxOneAudioProcessor::updateDeEsser (float deEssAmount)
+{
+    float norm = deEssAmount * 0.01f;
+    float thresholdDb = -36.0f * norm;
+    float ratio = 1.0f + 7.0f * norm;
+
+    deEssCompressor.setThreshold (thresholdDb);
+    deEssCompressor.setRatio (ratio);
+    deEssCompressor.setAttack (1.0f);
+    deEssCompressor.setRelease (40.0f);
+}
+
+void VoxOneAudioProcessor::processDeEsser (juce::AudioBuffer<float>& buffer, float deEssAmount)
+{
+    if (deEssAmount <= 0.01f)
+        return;
+
+    int numChannels = buffer.getNumChannels();
+    int numSamples = buffer.getNumSamples();
+
+    sibilanceBuffer.setSize (numChannels, numSamples, false, false, true);
+    sibilanceCompressedBuffer.setSize (numChannels, numSamples, false, false, true);
+
+    for (int ch = 0; ch < numChannels; ++ch)
+        sibilanceBuffer.copyFrom (ch, 0, buffer, ch, 0, numSamples);
+
+    juce::dsp::AudioBlock<float> sibBlock (sibilanceBuffer);
+    juce::dsp::ProcessContextReplacing<float> sibContext (sibBlock);
+    deEssBandPass.process (sibContext);
+
+    for (int ch = 0; ch < numChannels; ++ch)
+        sibilanceCompressedBuffer.copyFrom (ch, 0, sibilanceBuffer, ch, 0, numSamples);
+
+    juce::dsp::AudioBlock<float> compSibBlock (sibilanceCompressedBuffer);
+    juce::dsp::ProcessContextReplacing<float> compSibContext (compSibBlock);
+    deEssCompressor.process (compSibContext);
+
+    for (int ch = 0; ch < numChannels; ++ch)
+    {
+        auto* mainData = buffer.getWritePointer (ch);
+        const auto* origSib = sibilanceBuffer.getReadPointer (ch);
+        const auto* compSib = sibilanceCompressedBuffer.getReadPointer (ch);
+
+        for (int i = 0; i < numSamples; ++i)
+        {
+            float reduction = origSib[i] - compSib[i];
+            mainData[i] -= reduction;
+        }
+    }
+}
+
+void VoxOneAudioProcessor::processAirExciter (juce::AudioBuffer<float>& buffer, float airAmount)
+{
+    if (airAmount <= 0.01f)
+        return;
+
+    int numChannels = buffer.getNumChannels();
+    int numSamples = buffer.getNumSamples();
+    float norm = airAmount * 0.01f;
+    float drive = 1.0f + 2.5f * norm;
+    float blend = 0.35f * norm;
+
+    airBuffer.setSize (numChannels, numSamples, false, false, true);
+
+    for (int ch = 0; ch < numChannels; ++ch)
+        airBuffer.copyFrom (ch, 0, buffer, ch, 0, numSamples);
+
+    juce::dsp::AudioBlock<float> airBlock (airBuffer);
+    juce::dsp::ProcessContextReplacing<float> airContext (airBlock);
+    airHighPass.process (airContext);
+
+    for (int ch = 0; ch < numChannels; ++ch)
+    {
+        auto* mainData = buffer.getWritePointer (ch);
+        auto* airData = airBuffer.getWritePointer (ch);
+
+        for (int i = 0; i < numSamples; ++i)
+        {
+            float excited = std::tanh (airData[i] * drive) / drive;
+            mainData[i] += excited * blend;
+        }
+    }
+
+    juce::dsp::AudioBlock<float> mainBlock (buffer);
+    juce::dsp::ProcessContextReplacing<float> mainContext (mainBlock);
+    airShelfFilter.process (mainContext);
 }
 
 const juce::String VoxOneAudioProcessor::getName() const
@@ -153,6 +266,7 @@ void VoxOneAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock
     currentSampleRate = sampleRate;
     lastHpfFreq = -1.0f;
     lastCleanAmount = -1.0f;
+    lastAirAmount = -1.0f;
 
     juce::dsp::ProcessSpec spec;
     spec.sampleRate = sampleRate;
@@ -177,14 +291,37 @@ void VoxOneAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock
     compMakeupProcessor.prepare (spec);
     compMakeupProcessor.setRampDurationSeconds (0.02);
 
+    deEssBandPass.prepare (spec);
+    deEssBandPass.reset();
+    *deEssBandPass.state = *juce::dsp::IIR::Coefficients<float>::makeBandPass (
+        currentSampleRate, 6500.0f, 1.4f);
+
+    deEssCompressor.prepare (spec);
+    deEssCompressor.reset();
+
+    sibilanceBuffer.setSize (static_cast<int> (spec.numChannels), samplesPerBlock);
+    sibilanceCompressedBuffer.setSize (static_cast<int> (spec.numChannels), samplesPerBlock);
+
+    airHighPass.prepare (spec);
+    airHighPass.reset();
+    *airHighPass.state = *juce::dsp::IIR::Coefficients<float>::makeHighPass (
+        currentSampleRate, 5500.0f, 0.7071f);
+
+    airShelfFilter.prepare (spec);
+    airShelfFilter.reset();
+
+    airBuffer.setSize (static_cast<int> (spec.numChannels), samplesPerBlock);
+
     outputGainProcessor.prepare (spec);
     outputGainProcessor.setRampDurationSeconds (0.02);
 
     updateFilters (
         apvts.getRawParameterValue ("hpfFreq")->load(),
-        apvts.getRawParameterValue ("cleanAmount")->load());
+        apvts.getRawParameterValue ("cleanAmount")->load(),
+        apvts.getRawParameterValue ("airAmount")->load());
 
     updateCompressor (apvts.getRawParameterValue ("compAmount")->load());
+    updateDeEsser (apvts.getRawParameterValue ("deEssAmount")->load());
 }
 
 void VoxOneAudioProcessor::releaseResources()
@@ -218,12 +355,15 @@ void VoxOneAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce:
     auto hpfFreq      = apvts.getRawParameterValue ("hpfFreq")->load();
     auto cleanAmount  = apvts.getRawParameterValue ("cleanAmount")->load();
     auto compAmount   = apvts.getRawParameterValue ("compAmount")->load();
+    auto deEssAmount  = apvts.getRawParameterValue ("deEssAmount")->load();
+    auto airAmount    = apvts.getRawParameterValue ("airAmount")->load();
     auto outputGainDb = apvts.getRawParameterValue ("outputGain")->load();
 
     inputGainProcessor.setGainDecibels (inputGainDb);
     outputGainProcessor.setGainDecibels (outputGainDb);
-    updateFilters (hpfFreq, cleanAmount);
+    updateFilters (hpfFreq, cleanAmount, airAmount);
     updateCompressor (compAmount);
+    updateDeEsser (deEssAmount);
 
     juce::dsp::AudioBlock<float> block (buffer);
     juce::dsp::ProcessContextReplacing<float> context (block);
@@ -234,6 +374,10 @@ void VoxOneAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce:
     presenceFilter.process (context);
     compressor.process (context);
     compMakeupProcessor.process (context);
+
+    processDeEsser (buffer, deEssAmount);
+    processAirExciter (buffer, airAmount);
+
     outputGainProcessor.process (context);
 }
 
