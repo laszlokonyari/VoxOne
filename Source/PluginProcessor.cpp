@@ -23,18 +23,18 @@ VoxOneAudioProcessor::~VoxOneAudioProcessor()
 void VoxOneAudioProcessor::initPresets()
 {
     presets = {
-        { "Default",         0.0f,  80.0f, 50.0f, 40.0f, 35.0f, 30.0f, 20.0f,  0.0f, -0.3f },
-        { "Modern Rap",      1.5f,  95.0f, 65.0f, 68.0f, 45.0f, 45.0f, 40.0f,  0.0f, -0.2f },
-        { "Trap / Drill",    2.0f, 110.0f, 75.0f, 80.0f, 50.0f, 55.0f, 55.0f,  0.5f, -0.1f },
-        { "Melodic Rap",     0.5f,  85.0f, 60.0f, 55.0f, 45.0f, 65.0f, 25.0f,  0.0f, -0.3f },
-        { "Pop Lead",        0.0f,  90.0f, 70.0f, 60.0f, 55.0f, 60.0f, 20.0f,  0.0f, -0.3f },
-        { "R&B Smooth",      0.0f,  70.0f, 40.0f, 45.0f, 40.0f, 35.0f, 15.0f,  0.0f, -0.5f },
-        { "Hyperpop",        2.5f, 125.0f, 85.0f, 90.0f, 60.0f, 85.0f, 65.0f,  0.0f, -0.1f },
-        { "Rock / Punk",     2.0f, 100.0f, 70.0f, 75.0f, 35.0f, 30.0f, 75.0f,  0.0f, -0.2f },
-        { "Ad-Libs",         0.0f, 160.0f, 80.0f, 75.0f, 55.0f, 50.0f, 35.0f, -2.5f, -0.5f },
-        { "Warm Ballad",     0.0f,  65.0f, 35.0f, 30.0f, 30.0f, 20.0f, 10.0f,  0.0f, -0.5f },
-        { "Podcast / Voice", 1.0f,  85.0f, 55.0f, 55.0f, 60.0f, 15.0f, 10.0f,  0.5f, -1.0f },
-        { "Lo-Fi Radio",     3.0f, 240.0f, 90.0f, 85.0f, 20.0f,  0.0f, 90.0f, -1.5f, -0.5f }
+        { "Default",         0.0f,  80.0f, 50.0f, 40.0f, 35.0f, 30.0f, 20.0f,  0.0f, -0.3f, 1, 20.0f, 42.0f, 24.0f, 60.0f, 75.0f, 35.0f, 16.0f, 115.0f, 22.0f, 48.0f, 40.0f, false },
+        { "Modern Rap",      1.5f,  95.0f, 65.0f, 68.0f, 45.0f, 45.0f, 40.0f,  0.0f, -0.2f, 3, 18.0f, 36.0f, 18.0f, 65.0f, 65.0f, 55.0f, 22.0f,  95.0f, 18.0f, 45.0f, 60.0f, false },
+        { "Trap / Drill",    2.0f, 110.0f, 75.0f, 80.0f, 50.0f, 55.0f, 55.0f,  0.5f, -0.1f, 2, 28.0f, 64.0f, 32.0f, 42.0f, 85.0f, 65.0f, 26.0f, 165.0f, 34.0f, 35.0f, 65.0f, true  },
+        { "Melodic Rap",     0.5f,  85.0f, 60.0f, 55.0f, 45.0f, 65.0f, 25.0f,  0.0f, -0.3f, 2, 34.0f, 72.0f, 38.0f, 68.0f, 92.0f, 50.0f, 24.0f, 180.0f, 32.0f, 55.0f, 50.0f, true  },
+        { "Pop Lead",        0.0f,  90.0f, 70.0f, 60.0f, 55.0f, 60.0f, 20.0f,  0.0f, -0.3f, 1, 26.0f, 52.0f, 30.0f, 74.0f, 85.0f, 45.0f, 20.0f, 125.0f, 24.0f, 60.0f, 45.0f, false },
+        { "R&B Smooth",      0.0f,  70.0f, 40.0f, 45.0f, 40.0f, 35.0f, 15.0f,  0.0f, -0.5f, 2, 32.0f, 66.0f, 36.0f, 46.0f, 90.0f, 40.0f, 22.0f, 195.0f, 30.0f, 38.0f, 45.0f, true  },
+        { "Hyperpop",        2.5f, 125.0f, 85.0f, 90.0f, 60.0f, 85.0f, 65.0f,  0.0f, -0.1f, 3, 24.0f, 44.0f, 14.0f, 88.0f, 95.0f, 35.0f, 28.0f,  85.0f, 38.0f, 80.0f, 30.0f, true  },
+        { "Rock / Punk",     2.0f, 100.0f, 70.0f, 75.0f, 35.0f, 30.0f, 75.0f,  0.0f, -0.2f, 0, 22.0f, 38.0f, 16.0f, 52.0f, 60.0f, 30.0f, 26.0f,  92.0f, 16.0f, 42.0f, 25.0f, false },
+        { "Ad-Libs",         0.0f, 160.0f, 80.0f, 75.0f, 55.0f, 50.0f, 35.0f, -2.5f, -0.5f, 2, 52.0f, 82.0f, 20.0f, 58.0f, 100.0f, 25.0f, 38.0f, 220.0f, 46.0f, 45.0f, 20.0f, true  },
+        { "Warm Ballad",     0.0f,  65.0f, 35.0f, 30.0f, 30.0f, 20.0f, 10.0f,  0.0f, -0.5f, 2, 36.0f, 74.0f, 42.0f, 48.0f, 88.0f, 35.0f, 14.0f, 160.0f, 20.0f, 35.0f, 40.0f, false },
+        { "Podcast / Voice", 1.0f,  85.0f, 55.0f, 55.0f, 60.0f, 15.0f, 10.0f,  0.5f, -1.0f, 0,  0.0f, 20.0f, 10.0f, 50.0f, 50.0f,  0.0f,  0.0f, 100.0f,  0.0f, 50.0f,  0.0f, false },
+        { "Lo-Fi Radio",     3.0f, 240.0f, 90.0f, 85.0f, 20.0f,  0.0f, 90.0f, -1.5f, -0.5f, 0, 26.0f, 35.0f, 12.0f, 18.0f, 40.0f, 20.0f, 30.0f, 105.0f, 28.0f, 15.0f, 15.0f, false }
     };
 }
 
@@ -63,17 +63,32 @@ void VoxOneAudioProcessor::loadPreset (int index)
         return;
 
     currentPresetIndex.store (index, std::memory_order_relaxed);
-    const auto& preset = presets[static_cast<size_t> (index)];
+    const auto& p = presets[static_cast<size_t> (index)];
 
-    setParameterValue ("inputGain", preset.inputGain);
-    setParameterValue ("hpfFreq", preset.hpfFreq);
-    setParameterValue ("cleanAmount", preset.cleanAmount);
-    setParameterValue ("compAmount", preset.compAmount);
-    setParameterValue ("deEssAmount", preset.deEssAmount);
-    setParameterValue ("airAmount", preset.airAmount);
-    setParameterValue ("clipAmount", preset.clipAmount);
-    setParameterValue ("outputGain", preset.outputGain);
-    setParameterValue ("limiterCeiling", preset.limiterCeiling);
+    setParameterValue ("inputGain", p.inputGain);
+    setParameterValue ("hpfFreq", p.hpfFreq);
+    setParameterValue ("cleanAmount", p.cleanAmount);
+    setParameterValue ("compAmount", p.compAmount);
+    setParameterValue ("deEssAmount", p.deEssAmount);
+    setParameterValue ("airAmount", p.airAmount);
+    setParameterValue ("clipAmount", p.clipAmount);
+    setParameterValue ("outputGain", p.outputGain);
+    setParameterValue ("limiterCeiling", p.limiterCeiling);
+
+    setParameterValue ("reverbMode", static_cast<float> (p.reverbMode));
+    setParameterValue ("reverbMix", p.reverbMix);
+    setParameterValue ("reverbSize", p.reverbSize);
+    setParameterValue ("reverbPreDelay", p.reverbPreDelay);
+    setParameterValue ("reverbTone", p.reverbTone);
+    setParameterValue ("reverbWidth", p.reverbWidth);
+    setParameterValue ("reverbDuck", p.reverbDuck);
+    setParameterValue ("delayMix", p.delayMix);
+    setParameterValue ("delayTime", p.delayTime);
+    setParameterValue ("delayFeedback", p.delayFeedback);
+    setParameterValue ("delayTone", p.delayTone);
+    setParameterValue ("delayDuck", p.delayDuck);
+    setParameterValue ("delayPingPong", p.delayPingPong ? 1.0f : 0.0f);
+    setParameterValue ("spaceBypass", 0.0f);
 }
 
 void VoxOneAudioProcessor::copyWaveformData (std::array<float, waveformSize>& destIn,
@@ -89,92 +104,109 @@ void VoxOneAudioProcessor::copyWaveformData (std::array<float, waveformSize>& de
     }
 }
 
-float VoxOneAudioProcessor::getInputLevel() const
-{
-    return inputMeterLevel.load (std::memory_order_relaxed);
-}
-
-float VoxOneAudioProcessor::getOutputLevel() const
-{
-    return outputMeterLevel.load (std::memory_order_relaxed);
-}
-
-float VoxOneAudioProcessor::getGainReductionDb() const
-{
-    return compGainReductionDb.load (std::memory_order_relaxed);
-}
+float VoxOneAudioProcessor::getInputLevel() const { return inputMeterLevel.load (std::memory_order_relaxed); }
+float VoxOneAudioProcessor::getOutputLevel() const { return outputMeterLevel.load (std::memory_order_relaxed); }
+float VoxOneAudioProcessor::getGainReductionDb() const { return compGainReductionDb.load (std::memory_order_relaxed); }
+float VoxOneAudioProcessor::getReverbEnergy() const { return reverbEnergyLevel.load (std::memory_order_relaxed); }
+float VoxOneAudioProcessor::getDelayEnergy() const { return delayEnergyLevel.load (std::memory_order_relaxed); }
+float VoxOneAudioProcessor::getSpaceDuckActivity() const { return spaceDuckLevel.load (std::memory_order_relaxed); }
 
 juce::AudioProcessorValueTreeState::ParameterLayout VoxOneAudioProcessor::createParameterLayout()
 {
     std::vector<std::unique_ptr<juce::RangedAudioParameter>> params;
 
     params.push_back (std::make_unique<juce::AudioParameterFloat> (
-        juce::ParameterID { "inputGain", 1 },
-        "Input Gain",
-        juce::NormalisableRange<float> (-24.0f, 24.0f, 0.1f),
-        0.0f,
-        "dB"));
+        juce::ParameterID { "inputGain", 1 }, "Input Gain",
+        juce::NormalisableRange<float> (-24.0f, 24.0f, 0.1f), 0.0f, "dB"));
 
     params.push_back (std::make_unique<juce::AudioParameterFloat> (
-        juce::ParameterID { "hpfFreq", 1 },
-        "High-Pass",
-        juce::NormalisableRange<float> (20.0f, 250.0f, 1.0f, 0.5f),
-        80.0f,
-        "Hz"));
+        juce::ParameterID { "hpfFreq", 1 }, "High-Pass",
+        juce::NormalisableRange<float> (20.0f, 250.0f, 1.0f, 0.5f), 80.0f, "Hz"));
 
     params.push_back (std::make_unique<juce::AudioParameterFloat> (
-        juce::ParameterID { "cleanAmount", 1 },
-        "Clean EQ",
-        juce::NormalisableRange<float> (0.0f, 100.0f, 1.0f),
-        50.0f,
-        "%"));
+        juce::ParameterID { "cleanAmount", 1 }, "Clean EQ",
+        juce::NormalisableRange<float> (0.0f, 100.0f, 1.0f), 50.0f, "%"));
 
     params.push_back (std::make_unique<juce::AudioParameterFloat> (
-        juce::ParameterID { "compAmount", 1 },
-        "Compressor",
-        juce::NormalisableRange<float> (0.0f, 100.0f, 1.0f),
-        40.0f,
-        "%"));
+        juce::ParameterID { "compAmount", 1 }, "Compressor",
+        juce::NormalisableRange<float> (0.0f, 100.0f, 1.0f), 40.0f, "%"));
 
     params.push_back (std::make_unique<juce::AudioParameterFloat> (
-        juce::ParameterID { "deEssAmount", 1 },
-        "De-Esser",
-        juce::NormalisableRange<float> (0.0f, 100.0f, 1.0f),
-        35.0f,
-        "%"));
+        juce::ParameterID { "deEssAmount", 1 }, "De-Esser",
+        juce::NormalisableRange<float> (0.0f, 100.0f, 1.0f), 35.0f, "%"));
 
     params.push_back (std::make_unique<juce::AudioParameterFloat> (
-        juce::ParameterID { "airAmount", 1 },
-        "Fresh Air",
-        juce::NormalisableRange<float> (0.0f, 100.0f, 1.0f),
-        30.0f,
-        "%"));
+        juce::ParameterID { "airAmount", 1 }, "Fresh Air",
+        juce::NormalisableRange<float> (0.0f, 100.0f, 1.0f), 30.0f, "%"));
 
     params.push_back (std::make_unique<juce::AudioParameterFloat> (
-        juce::ParameterID { "clipAmount", 1 },
-        "Soft Clip",
-        juce::NormalisableRange<float> (0.0f, 100.0f, 1.0f),
-        20.0f,
-        "%"));
+        juce::ParameterID { "clipAmount", 1 }, "Soft Clip",
+        juce::NormalisableRange<float> (0.0f, 100.0f, 1.0f), 20.0f, "%"));
 
     params.push_back (std::make_unique<juce::AudioParameterFloat> (
-        juce::ParameterID { "outputGain", 1 },
-        "Output Gain",
-        juce::NormalisableRange<float> (-24.0f, 24.0f, 0.1f),
-        0.0f,
-        "dB"));
+        juce::ParameterID { "outputGain", 1 }, "Output Gain",
+        juce::NormalisableRange<float> (-24.0f, 24.0f, 0.1f), 0.0f, "dB"));
 
     params.push_back (std::make_unique<juce::AudioParameterFloat> (
-        juce::ParameterID { "limiterCeiling", 1 },
-        "Ceiling",
-        juce::NormalisableRange<float> (-6.0f, -0.1f, 0.1f),
-        -0.3f,
-        "dB"));
+        juce::ParameterID { "limiterCeiling", 1 }, "Ceiling",
+        juce::NormalisableRange<float> (-6.0f, -0.1f, 0.1f), -0.3f, "dB"));
 
     params.push_back (std::make_unique<juce::AudioParameterBool> (
-        juce::ParameterID { "bypass", 1 },
-        "Bypass",
-        false));
+        juce::ParameterID { "bypass", 1 }, "Bypass", false));
+
+    params.push_back (std::make_unique<juce::AudioParameterBool> (
+        juce::ParameterID { "spaceBypass", 1 }, "Space Bypass", false));
+
+    params.push_back (std::make_unique<juce::AudioParameterChoice> (
+        juce::ParameterID { "reverbMode", 1 }, "Reverb Mode",
+        juce::StringArray { "Room", "Plate", "Hall", "Ambience" }, 1));
+
+    params.push_back (std::make_unique<juce::AudioParameterFloat> (
+        juce::ParameterID { "reverbMix", 1 }, "Reverb Mix",
+        juce::NormalisableRange<float> (0.0f, 100.0f, 1.0f), 20.0f, "%"));
+
+    params.push_back (std::make_unique<juce::AudioParameterFloat> (
+        juce::ParameterID { "reverbSize", 1 }, "Reverb Size",
+        juce::NormalisableRange<float> (0.0f, 100.0f, 1.0f), 42.0f, "%"));
+
+    params.push_back (std::make_unique<juce::AudioParameterFloat> (
+        juce::ParameterID { "reverbPreDelay", 1 }, "Reverb Pre-Delay",
+        juce::NormalisableRange<float> (0.0f, 120.0f, 1.0f), 24.0f, "ms"));
+
+    params.push_back (std::make_unique<juce::AudioParameterFloat> (
+        juce::ParameterID { "reverbTone", 1 }, "Reverb Tone",
+        juce::NormalisableRange<float> (0.0f, 100.0f, 1.0f), 60.0f, "%"));
+
+    params.push_back (std::make_unique<juce::AudioParameterFloat> (
+        juce::ParameterID { "reverbWidth", 1 }, "Reverb Width",
+        juce::NormalisableRange<float> (0.0f, 100.0f, 1.0f), 75.0f, "%"));
+
+    params.push_back (std::make_unique<juce::AudioParameterFloat> (
+        juce::ParameterID { "reverbDuck", 1 }, "Reverb Duck",
+        juce::NormalisableRange<float> (0.0f, 100.0f, 1.0f), 35.0f, "%"));
+
+    params.push_back (std::make_unique<juce::AudioParameterFloat> (
+        juce::ParameterID { "delayMix", 1 }, "Delay Mix",
+        juce::NormalisableRange<float> (0.0f, 100.0f, 1.0f), 16.0f, "%"));
+
+    params.push_back (std::make_unique<juce::AudioParameterFloat> (
+        juce::ParameterID { "delayTime", 1 }, "Delay Time",
+        juce::NormalisableRange<float> (30.0f, 450.0f, 1.0f, 0.7f), 115.0f, "ms"));
+
+    params.push_back (std::make_unique<juce::AudioParameterFloat> (
+        juce::ParameterID { "delayFeedback", 1 }, "Delay Feedback",
+        juce::NormalisableRange<float> (0.0f, 75.0f, 1.0f), 22.0f, "%"));
+
+    params.push_back (std::make_unique<juce::AudioParameterFloat> (
+        juce::ParameterID { "delayTone", 1 }, "Delay Tone",
+        juce::NormalisableRange<float> (0.0f, 100.0f, 1.0f), 48.0f, "%"));
+
+    params.push_back (std::make_unique<juce::AudioParameterFloat> (
+        juce::ParameterID { "delayDuck", 1 }, "Delay Duck",
+        juce::NormalisableRange<float> (0.0f, 100.0f, 1.0f), 40.0f, "%"));
+
+    params.push_back (std::make_unique<juce::AudioParameterBool> (
+        juce::ParameterID { "delayPingPong", 1 }, "Delay Ping-Pong", false));
 
     return { params.begin(), params.end() };
 }
@@ -194,7 +226,7 @@ void VoxOneAudioProcessor::updateCleanEQ (float cleanAmount)
 void VoxOneAudioProcessor::pushWaveformSamples (const juce::AudioBuffer<float>& inBuf,
                                                 const juce::AudioBuffer<float>& outBuf)
 {
-    int numSamples = outBuf.getNumSamples();
+    int numSamples = std::min (inBuf.getNumSamples(), outBuf.getNumSamples());
     int numChannels = std::min (inBuf.getNumChannels(), outBuf.getNumChannels());
 
     if (numChannels <= 0 || numSamples <= 0)
@@ -241,45 +273,14 @@ void VoxOneAudioProcessor::pushWaveformSamples (const juce::AudioBuffer<float>& 
     outputMeterLevel.store (blockOutPeak, std::memory_order_relaxed);
 }
 
-const juce::String VoxOneAudioProcessor::getName() const
-{
-    return JucePlugin_Name;
-}
-
-bool VoxOneAudioProcessor::acceptsMidi() const
-{
-    return false;
-}
-
-bool VoxOneAudioProcessor::producesMidi() const
-{
-    return false;
-}
-
-bool VoxOneAudioProcessor::isMidiEffect() const
-{
-    return false;
-}
-
-double VoxOneAudioProcessor::getTailLengthSeconds() const
-{
-    return 0.0;
-}
-
-int VoxOneAudioProcessor::getNumPrograms()
-{
-    return static_cast<int> (presets.size());
-}
-
-int VoxOneAudioProcessor::getCurrentProgram()
-{
-    return getCurrentPresetIndex();
-}
-
-void VoxOneAudioProcessor::setCurrentProgram (int index)
-{
-    loadPreset (index);
-}
+const juce::String VoxOneAudioProcessor::getName() const { return JucePlugin_Name; }
+bool VoxOneAudioProcessor::acceptsMidi() const { return false; }
+bool VoxOneAudioProcessor::producesMidi() const { return false; }
+bool VoxOneAudioProcessor::isMidiEffect() const { return false; }
+double VoxOneAudioProcessor::getTailLengthSeconds() const { return 3.0; }
+int VoxOneAudioProcessor::getNumPrograms() { return static_cast<int> (presets.size()); }
+int VoxOneAudioProcessor::getCurrentProgram() { return getCurrentPresetIndex(); }
+void VoxOneAudioProcessor::setCurrentProgram (int index) { loadPreset (index); }
 
 const juce::String VoxOneAudioProcessor::getProgramName (int index)
 {
@@ -303,12 +304,17 @@ void VoxOneAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock
     pendingInPeak = 0.0f;
     pendingOutPeak = 0.0f;
 
+    int safeBlockSize = std::max (samplesPerBlock, 4096);
+    int numCh = std::max (1, getTotalNumOutputChannels());
+
     juce::dsp::ProcessSpec spec;
     spec.sampleRate = currentSampleRate;
-    spec.maximumBlockSize = static_cast<juce::uint32> (std::max (samplesPerBlock, 4096));
-    spec.numChannels = static_cast<juce::uint32> (std::max (1, getTotalNumOutputChannels()));
+    spec.maximumBlockSize = static_cast<juce::uint32> (safeBlockSize);
+    spec.numChannels = static_cast<juce::uint32> (numCh);
 
-    inputMonitorBuffer.setSize (static_cast<int> (spec.numChannels), static_cast<int> (spec.maximumBlockSize));
+    inputMonitorBuffer.setSize (numCh, safeBlockSize);
+    delayWetBuffer.setSize (numCh, safeBlockSize);
+    reverbWetBuffer.setSize (numCh, safeBlockSize);
 
     inputGainProcessor.prepare (spec);
     inputGainProcessor.setRampDurationSeconds (0.02);
@@ -330,6 +336,9 @@ void VoxOneAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock
     vocalCompressor.prepare (currentSampleRate);
     dynamicDeEsser.prepare (currentSampleRate);
     vocalExciter.prepare (currentSampleRate);
+
+    vocalSlapDelay.prepare (currentSampleRate, safeBlockSize);
+    vocalReverb.prepare (currentSampleRate, safeBlockSize);
 
     outputGainProcessor.prepare (spec);
     outputGainProcessor.setRampDurationSeconds (0.02);
@@ -396,6 +405,9 @@ void VoxOneAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce:
     if (isBypassed)
     {
         compGainReductionDb.store (0.0f, std::memory_order_relaxed);
+        reverbEnergyLevel.store (0.0f, std::memory_order_relaxed);
+        delayEnergyLevel.store (0.0f, std::memory_order_relaxed);
+        spaceDuckLevel.store (0.0f, std::memory_order_relaxed);
         pushWaveformSamples (inputMonitorBuffer, buffer);
         return;
     }
@@ -409,6 +421,22 @@ void VoxOneAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce:
     auto clipTarget = apvts.getRawParameterValue ("clipAmount")->load();
     auto outputGainDb = apvts.getRawParameterValue ("outputGain")->load();
     auto limiterCeiling = apvts.getRawParameterValue ("limiterCeiling")->load();
+
+    bool spaceBypassed = apvts.getRawParameterValue ("spaceBypass")->load() > 0.5f;
+    int reverbMode = static_cast<int> (std::round (apvts.getRawParameterValue ("reverbMode")->load()));
+    auto reverbMix = apvts.getRawParameterValue ("reverbMix")->load();
+    auto reverbSize = apvts.getRawParameterValue ("reverbSize")->load();
+    auto reverbPreDelay = apvts.getRawParameterValue ("reverbPreDelay")->load();
+    auto reverbTone = apvts.getRawParameterValue ("reverbTone")->load();
+    auto reverbWidth = apvts.getRawParameterValue ("reverbWidth")->load();
+    auto reverbDuck = apvts.getRawParameterValue ("reverbDuck")->load();
+
+    auto delayMix = apvts.getRawParameterValue ("delayMix")->load();
+    auto delayTime = apvts.getRawParameterValue ("delayTime")->load();
+    auto delayFeedback = apvts.getRawParameterValue ("delayFeedback")->load();
+    auto delayTone = apvts.getRawParameterValue ("delayTone")->load();
+    auto delayDuck = apvts.getRawParameterValue ("delayDuck")->load();
+    bool delayPingPong = apvts.getRawParameterValue ("delayPingPong")->load() > 0.5f;
 
     smoothHpfFreq.setTargetValue (hpfTarget);
     smoothCleanAmount.setTargetValue (cleanTarget);
@@ -464,6 +492,36 @@ void VoxOneAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce:
     vocalExciter.processBlock (buffer, airAmount);
     VocalSoftClipper::processBlock (buffer, clipAmount);
 
+    if (! spaceBypassed)
+    {
+        int spaceSamples = std::min (numSamples, std::min (delayWetBuffer.getNumSamples(), reverbWetBuffer.getNumSamples()));
+        int spaceCh = std::min (buffer.getNumChannels(), std::min (delayWetBuffer.getNumChannels(), reverbWetBuffer.getNumChannels()));
+
+        auto delMetrics = vocalSlapDelay.processBlock (
+            buffer, delayWetBuffer, spaceSamples,
+            delayMix, delayTime, delayFeedback, delayTone, delayDuck, delayPingPong);
+
+        auto revMetrics = vocalReverb.processBlock (
+            buffer, delayWetBuffer, reverbWetBuffer, spaceSamples,
+            reverbMode, reverbMix, reverbSize, reverbPreDelay, reverbTone, reverbWidth, reverbDuck);
+
+        for (int ch = 0; ch < spaceCh; ++ch)
+        {
+            buffer.addFrom (ch, 0, delayWetBuffer, ch, 0, spaceSamples);
+            buffer.addFrom (ch, 0, reverbWetBuffer, ch, 0, spaceSamples);
+        }
+
+        delayEnergyLevel.store (delMetrics.wetPeak, std::memory_order_relaxed);
+        reverbEnergyLevel.store (revMetrics.wetPeak, std::memory_order_relaxed);
+        spaceDuckLevel.store (std::max (delMetrics.duckAmount, revMetrics.duckAmount), std::memory_order_relaxed);
+    }
+    else
+    {
+        delayEnergyLevel.store (0.0f, std::memory_order_relaxed);
+        reverbEnergyLevel.store (0.0f, std::memory_order_relaxed);
+        spaceDuckLevel.store (0.0f, std::memory_order_relaxed);
+    }
+
     outputGainProcessor.process (context);
     outputLimiter.process (context);
 
@@ -478,10 +536,7 @@ void VoxOneAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce:
     pushWaveformSamples (inputMonitorBuffer, buffer);
 }
 
-bool VoxOneAudioProcessor::hasEditor() const
-{
-    return true;
-}
+bool VoxOneAudioProcessor::hasEditor() const { return true; }
 
 juce::AudioProcessorEditor* VoxOneAudioProcessor::createEditor()
 {

@@ -3,6 +3,7 @@
 #include <juce_audio_processors/juce_audio_processors.h>
 #include <juce_dsp/juce_dsp.h>
 #include "VocalDSP.h"
+#include "SpaceDSP.h"
 #include <array>
 #include <atomic>
 #include <vector>
@@ -19,6 +20,19 @@ struct VoxOnePreset
     float clipAmount;
     float outputGain;
     float limiterCeiling;
+    int reverbMode;
+    float reverbMix;
+    float reverbSize;
+    float reverbPreDelay;
+    float reverbTone;
+    float reverbWidth;
+    float reverbDuck;
+    float delayMix;
+    float delayTime;
+    float delayFeedback;
+    float delayTone;
+    float delayDuck;
+    bool delayPingPong;
 };
 
 class VoxOneAudioProcessor : public juce::AudioProcessor
@@ -64,6 +78,9 @@ public:
     float getInputLevel() const;
     float getOutputLevel() const;
     float getGainReductionDb() const;
+    float getReverbEnergy() const;
+    float getDelayEnergy() const;
+    float getSpaceDuckActivity() const;
 
     juce::AudioProcessorValueTreeState apvts;
 
@@ -89,6 +106,9 @@ private:
     DynamicDeEsser dynamicDeEsser;
     VocalExciter vocalExciter;
 
+    VocalSlapDelay vocalSlapDelay;
+    VocalReverb vocalReverb;
+
     juce::dsp::Gain<float> outputGainProcessor;
     juce::dsp::Limiter<float> outputLimiter;
 
@@ -100,6 +120,8 @@ private:
     juce::SmoothedValue<float> smoothClipAmount;
 
     juce::AudioBuffer<float> inputMonitorBuffer;
+    juce::AudioBuffer<float> delayWetBuffer;
+    juce::AudioBuffer<float> reverbWetBuffer;
 
     double currentSampleRate { 44100.0 };
     float lastCleanAmount { -1.0f };
@@ -115,6 +137,9 @@ private:
     std::atomic<float> inputMeterLevel { 0.0f };
     std::atomic<float> outputMeterLevel { 0.0f };
     std::atomic<float> compGainReductionDb { 0.0f };
+    std::atomic<float> reverbEnergyLevel { 0.0f };
+    std::atomic<float> delayEnergyLevel { 0.0f };
+    std::atomic<float> spaceDuckLevel { 0.0f };
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (VoxOneAudioProcessor)
 };
