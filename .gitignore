@@ -1,6 +1,7 @@
 cmake-build-*/
 build/
 out/
+installer/Output/
 .idea/
 .vs/
 *.user
