@@ -16,7 +16,7 @@
 
 <br />
 
-[Download v1.0.0](https://github.com/lacikapeek/VoxOne/releases/latest) · [Features](#features) · [Installation](#installation) · [Build from Source](#building-from-source)
+[Download v1.0.0](https://github.com/laszlokonyari/VoxOne/releases/tag/v1.0.0) · [Features](#features) · [Installation](#installation) · [Build from Source](#building-from-source)
 
 </div>
 
