@@ -111,6 +111,16 @@ float VoxOneAudioProcessor::getReverbEnergy() const { return reverbEnergyLevel.l
 float VoxOneAudioProcessor::getDelayEnergy() const { return delayEnergyLevel.load (std::memory_order_relaxed); }
 float VoxOneAudioProcessor::getSpaceDuckActivity() const { return spaceDuckLevel.load (std::memory_order_relaxed); }
 
+float VoxOneAudioProcessor::getUiScale() const
+{
+    return uiScale.load (std::memory_order_relaxed);
+}
+
+void VoxOneAudioProcessor::setUiScale (float newScale)
+{
+    uiScale.store (newScale, std::memory_order_relaxed);
+}
+
 juce::AudioProcessorValueTreeState::ParameterLayout VoxOneAudioProcessor::createParameterLayout()
 {
     std::vector<std::unique_ptr<juce::RangedAudioParameter>> params;
@@ -547,6 +557,7 @@ void VoxOneAudioProcessor::getStateInformation (juce::MemoryBlock& destData)
 {
     auto state = apvts.copyState();
     std::unique_ptr<juce::XmlElement> xml (state.createXml());
+    xml->setAttribute ("uiScale", static_cast<double> (uiScale.load (std::memory_order_relaxed)));
     copyXmlToBinary (*xml, destData);
 }
 
@@ -555,7 +566,12 @@ void VoxOneAudioProcessor::setStateInformation (const void* data, int sizeInByte
     std::unique_ptr<juce::XmlElement> xmlState (getXmlFromBinary (data, sizeInBytes));
 
     if (xmlState != nullptr && xmlState->hasTagName (apvts.state.getType()))
+    {
+        if (xmlState->hasAttribute ("uiScale"))
+            uiScale.store (static_cast<float> (xmlState->getDoubleAttribute ("uiScale", 0.0)), std::memory_order_relaxed);
+
         apvts.replaceState (juce::ValueTree::fromXml (*xmlState));
+    }
 }
 
 juce::AudioProcessor* JUCE_CALLTYPE createPluginFilter()

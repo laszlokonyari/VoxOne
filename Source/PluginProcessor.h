@@ -82,6 +82,9 @@ public:
     float getDelayEnergy() const;
     float getSpaceDuckActivity() const;
 
+    float getUiScale() const;
+    void setUiScale (float newScale);
+
     juce::AudioProcessorValueTreeState apvts;
 
 private:
@@ -93,6 +96,7 @@ private:
 
     std::vector<VoxOnePreset> presets;
     std::atomic<int> currentPresetIndex { 0 };
+    std::atomic<float> uiScale { 0.0f };
 
     juce::dsp::Gain<float> inputGainProcessor;
     juce::dsp::StateVariableTPTFilter<float> hpfStage1;

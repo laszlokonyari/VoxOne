@@ -2,15 +2,17 @@
 #include "PluginEditor.h"
 
 VoxOneAudioProcessorEditor::VoxOneAudioProcessorEditor (VoxOneAudioProcessor& p)
-    : AudioProcessorEditor (&p), audioProcessor (p)
+    : AudioProcessorEditor (&p), audioProcessor (p), contentCanvas (*this)
 {
     setLookAndFeel (&customLookAndFeel);
+
+    addAndMakeVisible (contentCanvas);
 
     setupHeaderControls();
     setupSpaceControls();
 
-    addAndMakeVisible (waveformVisualizer);
-    addAndMakeVisible (spaceVisualizer);
+    contentCanvas.addAndMakeVisible (waveformVisualizer);
+    contentCanvas.addAndMakeVisible (spaceVisualizer);
 
     auto cyanAccent = juce::Colour (0xff00e5ff);
     auto violetAccent = juce::Colour (0xff9b7bff);
@@ -72,7 +74,28 @@ VoxOneAudioProcessorEditor::VoxOneAudioProcessorEditor (VoxOneAudioProcessor& p)
     spaceBypassAttachment = std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment> (audioProcessor.apvts, "spaceBypass", spaceBypassButton);
     pingPongAttachment = std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment> (audioProcessor.apvts, "delayPingPong", pingPongButton);
 
-    setSize (1040, 760);
+    contentCanvas.setBounds (0, 0, designWidth, designHeight);
+    layoutContent();
+
+    lastDisplayUserArea = getCurrentDisplayUserArea();
+    float maxAllowed = getMaxAllowedUserScale();
+    float savedScale = audioProcessor.getUiScale();
+    float initialScale = (savedScale > 0.01f)
+        ? juce::jlimit (minUserScale, maxAllowed, savedScale)
+        : std::min (1.0f, maxAllowed);
+
+    currentUserScale = initialScale;
+    int initW = static_cast<int> (std::round (static_cast<float> (defaultWidth) * currentUserScale));
+    int initH = static_cast<int> (std::round (static_cast<float> (defaultHeight) * currentUserScale));
+
+    setResizable (true, false);
+    if (auto* constrainer = getConstrainer())
+        constrainer->setFixedAspectRatio (static_cast<double> (defaultWidth) / static_cast<double> (defaultHeight));
+
+    setSize (initW, initH);
+    updateResizeLimits();
+    applyCanvasTransform();
+
     startTimerHz (60);
 }
 
@@ -82,8 +105,143 @@ VoxOneAudioProcessorEditor::~VoxOneAudioProcessorEditor()
     setLookAndFeel (nullptr);
 }
 
+juce::Rectangle<int> VoxOneAudioProcessorEditor::getCurrentDisplayUserArea() const
+{
+    const auto& displays = juce::Desktop::getInstance().getDisplays();
+    const juce::Displays::Display* display = nullptr;
+
+    if (isShowing() && ! getScreenBounds().isEmpty())
+        display = displays.getDisplayForRect (getScreenBounds());
+
+    if (display == nullptr)
+        display = displays.getPrimaryDisplay();
+
+    if (display != nullptr && display->userArea.getWidth() >= 640 && display->userArea.getHeight() >= 480)
+        return display->userArea;
+
+    return { 0, 0, 1280, 720 };
+}
+
+float VoxOneAudioProcessorEditor::getMaxAllowedUserScale() const
+{
+    auto userArea = getCurrentDisplayUserArea();
+    float availW = std::max (530.0f, static_cast<float> (userArea.getWidth()) - 32.0f);
+    float availH = std::max (388.0f, static_cast<float> (userArea.getHeight()) - 80.0f);
+
+    float fitScale = std::min (availW / static_cast<float> (defaultWidth),
+                               availH / static_cast<float> (defaultHeight));
+
+    return juce::jlimit (minUserScale, maxAbsoluteUserScale, fitScale);
+}
+
+void VoxOneAudioProcessorEditor::updateResizeLimits()
+{
+    float maxAllowed = getMaxAllowedUserScale();
+    int minW = static_cast<int> (std::round (static_cast<float> (defaultWidth) * minUserScale));
+    int minH = static_cast<int> (std::round (static_cast<float> (defaultHeight) * minUserScale));
+    int maxW = static_cast<int> (std::round (static_cast<float> (defaultWidth) * maxAllowed));
+    int maxH = static_cast<int> (std::round (static_cast<float> (defaultHeight) * maxAllowed));
+
+    setResizeLimits (minW, minH, std::max (minW, maxW), std::max (minH, maxH));
+}
+
+void VoxOneAudioProcessorEditor::applyCanvasTransform()
+{
+    if (getWidth() <= 0 || getHeight() <= 0)
+        return;
+
+    float renderScale = static_cast<float> (getWidth()) / static_cast<float> (designWidth);
+    currentUserScale = static_cast<float> (getWidth()) / static_cast<float> (defaultWidth);
+    contentCanvas.setTransform (juce::AffineTransform::scale (renderScale));
+    logoScaleButton.setScalePercent (static_cast<int> (std::round (currentUserScale * 100.0f)));
+}
+
+void VoxOneAudioProcessorEditor::applyUserScale (float requestedUserScale, bool persistScale)
+{
+    updateResizeLimits();
+    float maxAllowed = getMaxAllowedUserScale();
+    float clamped = juce::jlimit (minUserScale, maxAllowed, requestedUserScale);
+
+    if (persistScale)
+        audioProcessor.setUiScale (clamped);
+
+    int targetW = static_cast<int> (std::round (static_cast<float> (defaultWidth) * clamped));
+    int targetH = static_cast<int> (std::round (static_cast<float> (defaultHeight) * clamped));
+
+    if (targetW != getWidth() || targetH != getHeight())
+        setSize (targetW, targetH);
+    else
+        applyCanvasTransform();
+}
+
+void VoxOneAudioProcessorEditor::showScaleMenu()
+{
+    updateResizeLimits();
+    float maxAllowed = getMaxAllowedUserScale();
+    float autoFitScale = std::min (1.0f, maxAllowed);
+    int autoFitPct = static_cast<int> (std::round (autoFitScale * 100.0f));
+    int maxFitPct = static_cast<int> (std::round (maxAllowed * 100.0f));
+
+    juce::PopupMenu menu;
+    menu.addSectionHeader ("WINDOW SCALE");
+    menu.addItem (1000, "Auto Fit (" + juce::String (autoFitPct) + "%)", true, false);
+
+    if (maxAllowed > 1.03f)
+        menu.addItem (1001, "Max Screen Fit (" + juce::String (maxFitPct) + "%)", true, false);
+
+    menu.addSeparator();
+
+    constexpr std::array<int, 9> percentages { 65, 75, 85, 90, 100, 115, 125, 140, 150 };
+    for (int pct : percentages)
+    {
+        float s = static_cast<float> (pct) * 0.01f;
+        bool fits = s <= maxAllowed + 0.005f;
+        bool isCurrent = std::abs (currentUserScale - s) < 0.02f;
+        juce::String label = juce::String (pct) + "%" + (fits ? "" : " (Too Large)");
+        menu.addItem (pct, label, fits, isCurrent);
+    }
+
+    auto safeThis = juce::Component::SafePointer<VoxOneAudioProcessorEditor> (this);
+    menu.showMenuAsync (juce::PopupMenu::Options().withTargetComponent (&logoScaleButton),
+                        [safeThis, autoFitScale, maxAllowed] (int result)
+    {
+        if (safeThis == nullptr || result == 0)
+            return;
+
+        if (result == 1000)
+            safeThis->applyUserScale (autoFitScale, true);
+        else if (result == 1001)
+            safeThis->applyUserScale (maxAllowed, true);
+        else
+            safeThis->applyUserScale (static_cast<float> (result) * 0.01f, true);
+    });
+}
+
+void VoxOneAudioProcessorEditor::parentHierarchyChanged()
+{
+    if (! isShowing())
+        return;
+
+    auto displayArea = getCurrentDisplayUserArea();
+    if (displayArea != lastDisplayUserArea)
+    {
+        lastDisplayUserArea = displayArea;
+        updateResizeLimits();
+
+        float maxAllowed = getMaxAllowedUserScale();
+        if (currentUserScale > maxAllowed + 0.005f)
+            applyUserScale (maxAllowed, false);
+    }
+}
+
 void VoxOneAudioProcessorEditor::setupHeaderControls()
 {
+    logoScaleButton.onClick = [this]()
+    {
+        showScaleMenu();
+    };
+    contentCanvas.addAndMakeVisible (logoScaleButton);
+
     const auto& presets = audioProcessor.getPresets();
     for (int i = 0; i < static_cast<int> (presets.size()); ++i)
         presetSelector.addItem (presets[static_cast<size_t> (i)].name, i + 1);
@@ -97,13 +255,13 @@ void VoxOneAudioProcessorEditor::setupHeaderControls()
         lastDisplayedPreset = selectedIndex;
         audioProcessor.loadPreset (selectedIndex);
     };
-    addAndMakeVisible (presetSelector);
+    contentCanvas.addAndMakeVisible (presetSelector);
 
     auto styleNavButton = [this] (juce::TextButton& btn)
     {
         btn.setColour (juce::TextButton::buttonColourId, juce::Colour (0xff171c29));
         btn.setColour (juce::TextButton::textColourOffId, juce::Colour (0xff00e5ff));
-        addAndMakeVisible (btn);
+        contentCanvas.addAndMakeVisible (btn);
     };
 
     styleNavButton (prevPresetButton);
@@ -132,7 +290,7 @@ void VoxOneAudioProcessorEditor::setupHeaderControls()
     {
         bypassButton.setButtonText (bypassButton.getToggleState() ? "BYPASSED" : "ACTIVE");
     };
-    addAndMakeVisible (bypassButton);
+    contentCanvas.addAndMakeVisible (bypassButton);
 }
 
 void VoxOneAudioProcessorEditor::setupSpaceControls()
@@ -156,7 +314,7 @@ void VoxOneAudioProcessorEditor::setupSpaceControls()
                 param->setValueNotifyingHost (norm);
             }
         };
-        addAndMakeVisible (btn);
+        contentCanvas.addAndMakeVisible (btn);
     }
 
     spaceBypassButton.setClickingTogglesState (true);
@@ -168,13 +326,13 @@ void VoxOneAudioProcessorEditor::setupSpaceControls()
     {
         spaceBypassButton.setButtonText (spaceBypassButton.getToggleState() ? "SPACE OFF" : "SPACE ON");
     };
-    addAndMakeVisible (spaceBypassButton);
+    contentCanvas.addAndMakeVisible (spaceBypassButton);
 
     pingPongLabel.setText ("ROUTING", juce::dontSendNotification);
     pingPongLabel.setJustificationType (juce::Justification::centred);
     pingPongLabel.setFont (juce::FontOptions (10.5f, juce::Font::bold));
     pingPongLabel.setColour (juce::Label::textColourId, juce::Colour (0xff9aa5be));
-    addAndMakeVisible (pingPongLabel);
+    contentCanvas.addAndMakeVisible (pingPongLabel);
 
     pingPongButton.setClickingTogglesState (true);
     pingPongButton.setColour (juce::TextButton::buttonColourId, juce::Colour (0xff181d2c));
@@ -185,7 +343,7 @@ void VoxOneAudioProcessorEditor::setupSpaceControls()
     {
         pingPongButton.setButtonText (pingPongButton.getToggleState() ? "PING-PONG" : "STEREO");
     };
-    addAndMakeVisible (pingPongButton);
+    contentCanvas.addAndMakeVisible (pingPongButton);
 }
 
 void VoxOneAudioProcessorEditor::setupRotarySlider (AnimatedVoxKnob& slider, juce::Label& label,
@@ -201,17 +359,33 @@ void VoxOneAudioProcessorEditor::setupRotarySlider (AnimatedVoxKnob& slider, juc
     slider.setColour (juce::Slider::rotarySliderFillColourId, accentColour);
     slider.setColour (juce::Slider::rotarySliderOutlineColourId, juce::Colour (0xff23293b));
     slider.setColour (juce::Slider::thumbColourId, juce::Colour (0xffffffff));
-    addAndMakeVisible (slider);
+    contentCanvas.addAndMakeVisible (slider);
 
     label.setText (text, juce::dontSendNotification);
     label.setJustificationType (juce::Justification::centred);
     label.setFont (juce::FontOptions (10.5f, juce::Font::bold));
     label.setColour (juce::Label::textColourId, juce::Colour (0xff9aa5be));
-    addAndMakeVisible (label);
+    contentCanvas.addAndMakeVisible (label);
 }
 
 void VoxOneAudioProcessorEditor::timerCallback()
 {
+    if (isShowing())
+    {
+        auto displayArea = getCurrentDisplayUserArea();
+        if (displayArea != lastDisplayUserArea)
+        {
+            lastDisplayUserArea = displayArea;
+            updateResizeLimits();
+
+            float maxAllowed = getMaxAllowedUserScale();
+            if (currentUserScale > maxAllowed + 0.005f)
+                applyUserScale (maxAllowed, false);
+        }
+    }
+
+    logoScaleButton.tickAnimation();
+
     audioProcessor.copyWaveformData (inWaveCache, outWaveCache);
 
     bool isBypassed = audioProcessor.apvts.getRawParameterValue ("bypass")->load() > 0.5f;
@@ -290,7 +464,7 @@ void VoxOneAudioProcessorEditor::timerCallback()
     masterCardGlow = nextMaster;
 
     if (cardsChanged)
-        repaint();
+        contentCanvas.repaint();
 
     int hostPreset = audioProcessor.getCurrentPresetIndex();
     if (hostPreset != lastDisplayedPreset)
@@ -417,29 +591,26 @@ void VoxOneAudioProcessorEditor::drawSignalChain (juce::Graphics& g, juce::Recta
 
 void VoxOneAudioProcessorEditor::paint (juce::Graphics& g)
 {
+    g.fillAll (juce::Colour (0xff090b12));
+}
+
+void VoxOneAudioProcessorEditor::paintContent (juce::Graphics& g)
+{
     juce::ColourGradient bgGrad (juce::Colour (0xff090b12), 0.0f, 0.0f,
-                                 juce::Colour (0xff101422), 0.0f, static_cast<float> (getHeight()), false);
+                                 juce::Colour (0xff101422), 0.0f, static_cast<float> (designHeight), false);
     g.setGradientFill (bgGrad);
     g.fillAll();
 
-    juce::ColourGradient topGlow (juce::Colour (0xff00e5ff).withAlpha (0.055f), static_cast<float> (getWidth()) * 0.5f, 0.0f,
-                                  juce::Colours::transparentBlack, static_cast<float> (getWidth()) * 0.5f, 200.0f, false);
+    juce::ColourGradient topGlow (juce::Colour (0xff00e5ff).withAlpha (0.055f), static_cast<float> (designWidth) * 0.5f, 0.0f,
+                                  juce::Colours::transparentBlack, static_cast<float> (designWidth) * 0.5f, 200.0f, false);
     g.setGradientFill (topGlow);
-    g.fillRect (0, 0, getWidth(), 200);
+    g.fillRect (0, 0, designWidth, 200);
 
     g.setColour (juce::Colour (0xff121623));
-    g.fillRect (0, 0, getWidth(), 58);
+    g.fillRect (0, 0, designWidth, 58);
 
     g.setColour (juce::Colour (0xff20283d));
-    g.drawHorizontalLine (58, 0.0f, static_cast<float> (getWidth()));
-
-    g.setColour (juce::Colour (0xff00e5ff));
-    g.setFont (juce::FontOptions (22.0f, juce::Font::bold));
-    g.drawText ("VOXONE", 22, 8, 130, 26, juce::Justification::centredLeft);
-
-    g.setColour (juce::Colour (0xff6c7a99));
-    g.setFont (juce::FontOptions (9.8f, juce::Font::bold));
-    g.drawText ("VOCAL FINISHING SUITE", 23, 34, 170, 14, juce::Justification::centredLeft);
+    g.drawHorizontalLine (58, 0.0f, static_cast<float> (designWidth));
 
     drawModuleCard (g, toneCardBounds, "TONE & CLEAN", juce::Colour (0xff00e5ff), toneCardGlow);
     drawModuleCard (g, dynamicsCardBounds, "DYNAMICS", juce::Colour (0xff9b7bff), dynamicsCardGlow);
@@ -466,20 +637,22 @@ void VoxOneAudioProcessorEditor::paint (juce::Graphics& g)
     drawSignalChain (g, flowArea);
 }
 
-void VoxOneAudioProcessorEditor::resized()
+void VoxOneAudioProcessorEditor::layoutContent()
 {
+    logoScaleButton.setBounds (14, 7, 186, 44);
+
     int headerY = 13;
     int presetAreaWidth = 320;
-    auto presetArea = juce::Rectangle<int> ((getWidth() - presetAreaWidth) / 2, headerY, presetAreaWidth, 32);
+    auto presetArea = juce::Rectangle<int> ((designWidth - presetAreaWidth) / 2, headerY, presetAreaWidth, 32);
     prevPresetButton.setBounds (presetArea.removeFromLeft (32));
     presetArea.removeFromLeft (6);
     nextPresetButton.setBounds (presetArea.removeFromRight (32));
     presetArea.removeFromRight (6);
     presetSelector.setBounds (presetArea);
 
-    bypassButton.setBounds (getWidth() - 120, headerY, 98, 32);
+    bypassButton.setBounds (designWidth - 120, headerY, 98, 32);
 
-    auto area = getLocalBounds();
+    auto area = juce::Rectangle<int> (0, 0, designWidth, designHeight);
     area.removeFromTop (58);
     area.reduce (18, 10);
 
@@ -588,4 +761,9 @@ void VoxOneAudioProcessorEditor::resized()
 
     ceilingLabel.setBounds (ceilingSlot.removeFromTop (14));
     ceilingSlider.setBounds (ceilingSlot.reduced (4, 0));
+}
+
+void VoxOneAudioProcessorEditor::resized()
+{
+    applyCanvasTransform();
 }
