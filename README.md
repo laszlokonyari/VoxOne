@@ -87,7 +87,7 @@ VoxOne ships with **12 mix-ready vocal presets** accessible from both the plugin
 ### Compile
 
 ```bash
-git clone [https://github.com/lacikapeek/VoxOne.git](https://github.com/lacikapeek/VoxOne.git)
+git clone https://github.com/lacikapeek/VoxOne.git
 cd VoxOne
 cmake -B build -G "Visual Studio 17 2022" -A x64
 cmake --build build --config Release --target VoxOne_VST3
