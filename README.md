@@ -64,7 +64,7 @@ VoxOne ships with **12 mix-ready vocal presets** accessible from both the plugin
 
 ## Installation
 
-1. Download **`VoxOne-1.0.0-Windows-Setup.exe`** from the [GitHub Releases](https://github.com/lacikapeek/VoxOne/releases/latest) page.
+1. Download **`VoxOne-1.0.0-Windows-Setup.exe`** from the [GitHub Releases](https://github.com/laszlokonyari/VoxOne/releases/tag/v1.0.0) page.
 2. Run the installer. It automatically installs the 64-bit VST3 plugin to:
    ```text
    C:\Program Files\Common Files\VST3\VoxOne.vst3
